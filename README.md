@@ -1,1 +1,2 @@
-# Sem6-Hamstersimulator
+# RL-Hamster-Simulator
+Real Life Hamster Simulator
