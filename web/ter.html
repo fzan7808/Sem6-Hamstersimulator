@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <title>Hamstersimulator</title>
@@ -7,66 +7,75 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="toolbar">
-        <a href="edit.html">Editor</a>
-        <a href="ter.html">Territorium</a>
+<!-- 1) Links-Bar -->
+<div class="toolbar">
+    <a href="edit.html">Editor</a>
+    <a href="ter.html">Territorium</a>
+</div>
+
+<!-- 2) Buttons-Bar -->
+<div class="ter_toolbar">
+    <button id="newTerritory"><img src="../assets/leiste/New24.gif" alt="Neues Territorium"></button>
+    <button id="openTerritory"><img src="../assets/leiste/Open24.gif" alt="Territorium öffnen"></button>
+    <button id="saveTerritory"><img src="../assets/leiste/SaveAs24.gif" alt="Territorium speichern"></button>
+
+    <button id="placeHamster"><img src="../assets/hamster/hamstereast.png" alt="Hamster versetzen"></button>
+    <button id="rotateBtn"><img src="../assets/leiste/Turn24.gif"     alt="Hamster drehen"></button>
+    <button id="placeHamsterCorn"><img src="../assets/leiste/HamsterCorn24.png" alt="HamsterCorn"></button>
+    <button id="placeCorn"><img src="../assets/leiste/Corn24.gif"      alt="Körner"></button>
+    <button id="placeWall"><img src="../assets/wand/Wall32.png"        alt="Wall"></button>
+    <button id="deleteItem"><img src="../assets/leiste/Delete32.gif"   alt="Delete"></button>
+
+    <button id="zoomIn"><img src="../assets/leiste/ZoomIn24.gif"  alt="ZoomIn"></button>
+    <button id="zoomOut"><img src="../assets/leiste/ZoomOut24.gif" alt="ZoomOut"></button>
+    <button disabled><img src="../assets/leiste/StepBack24.gif" alt="StepBack"></button>
+    <button disabled><img src="../assets/leiste/Play24.gif"     alt="Play"></button>
+    <button disabled><img src="../assets/leiste/Pause24.gif"    alt="Pause"></button>
+    <button disabled><img src="../assets/leiste/Stop24.gif"     alt="Stop"></button>
+</div>
+
+<!-- hidden file input for .ter -->
+<input type="file" id="fileInput" accept=".ter" style="display:none">
+
+<div id="gridContainer"></div>
+
+<!-- lower-right corn display -->
+<div id="cornDisplay" style="
+      position:fixed;
+      bottom:8px;
+      right:8px;
+      background:rgba(0,0,0,0.6);
+      color:white;
+      padding:4px 8px;
+      border-radius:4px;
+      font-weight:bold;
+      pointer-events:none;
+      ">
+    Körner im Maul: 0
+</div>
+
+<!-- Territorium-Modal -->
+<div id="territoryModal" class="modal">
+    <div class="modal-content">
+        <label for="rows">Zeilen:</label>
+        <input type="number" id="rows" min="1" placeholder="Anzahl der Zeilen">
+        <label for="cols">Spalten:</label>
+        <input type="number" id="cols" min="1" placeholder="Anzahl der Spalten">
+        <button id="createTerritoryConfirm">Erstellen</button>
+        <button id="createTerritoryCancel">Abbrechen</button>
     </div>
-    <div class="ter_toolbar">
-        <div>
-            <button>
-                <img src="../hamster%20assets/leiste/New24.gif" alt="Neues Territorium">
-            </button>
-            <button>
-                <img src="../hamster%20assets/leiste/Open24.gif" alt="Territorium öffnen">
-            </button>
-            <button>
-                <img src="../hamster%20assets/leiste/SaveAs24.gif" alt="Territorium speichern">
-            </button>
-        </div>
-        <div>
-            <button>
-                <img src="../hamster%20assets/hamster/hamstereast.png" alt="Hamster versetzen">
-            </button>
-            <button>
-                <img src="../hamster%20assets/leiste/Turn24.gif" alt="Hamster drehen.">
-            </button>
-            <button>
-                <img src="../hamster%20assets/leiste/HamsterCorn24.png">
-            </button>
-            <button>
-                <img src="../hamster%20assets/leiste/Corn24.gif">
-            </button>
-            <button>
-                <img src="../hamster%20assets/wand/Wall32.png">
-            </button>
-            <button>
-                <img src="../hamster%20assets/leiste/Delete32.gif">
-            </button>
-        </div>
-        <div>
-            <button>
-                <img src="../hamster%20assets/leiste/ZoomIn24.gif">
-            </button>
-            <button>
-                <img src="../hamster%20assets/leiste/ZoomOut24.gif">
-            </button>
-        </div>
-        <div>
-            <button disabled>
-                <img src="../hamster%20assets/leiste/StepBack24.gif">
-            </button>
-        </div>
-        <div>
-            <button disabled>
-                <img src="../hamster%20assets/leiste/Play24.gif">
-            </button>
-            <button disabled>
-                <img src="../hamster%20assets/leiste/Pause24.gif">
-            </button>
-            <button disabled>
-                <img src="../hamster%20assets/leiste/Stop24.gif">
-            </button>
-        </div>
+</div>
+
+<!-- Körner-Modal -->
+<div id="cornModal" class="modal">
+    <div class="modal-content">
+        <label for="cornCountInput">Anzahl der Körner (1–12):</label>
+        <input type="number" id="cornCountInput" min="1" max="12" placeholder="1–12">
+        <button id="cornConfirm">OK</button>
+        <button id="cornCancel">Abbrechen</button>
     </div>
+</div>
+
+<script src="ter.js"></script>
 </body>
 </html>
