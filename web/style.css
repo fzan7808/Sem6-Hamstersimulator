@@ -10,22 +10,32 @@
 }
 
 .line-numbers {
-    background: #f0f0f0;
-    padding: 10px;
+    background: #f4f4f4;
+    padding: 16px 8px;
     text-align: right;
     user-select: none;
-    color: #888;
-    min-width: 40px;
+    color: #999;
+    font-size: 14px;
+    font-family: monospace;
+    line-height: 1.6;
 }
+
 
 .code-editor {
     flex-grow: 1;
-    padding: 10px;
-    font-family: monospace;
-    background-color: #fff;
+    padding: 16px;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 15px;
+    line-height: 1.6;
+    background-color: #ffffff;
+    color: #2d2d2d;
+    font-weight: 500;
     outline: none;
     overflow: auto;
+    white-space: pre;
 }
+
+
 
 body {
     font-family: Arial, sans-serif;
