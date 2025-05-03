@@ -1,40 +1,64 @@
-.ter_toolbar {
+.editor-container {
     display: flex;
-    gap: 16px;
+    border: 2px solid #333;
+    border-radius: 5px;
+    overflow: hidden;
+    width: 90%;
+    max-width: 1800px;
+    height: 600px;
+    margin-top: 20px;
 }
 
-.ter_toolbar > div {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+.line-numbers {
+    background: #f0f0f0;
+    padding: 10px;
+    text-align: right;
+    user-select: none;
+    color: #888;
+    min-width: 40px;
 }
 
-.ter_toolbar button {
-    width: 36px;
-    height: 36px;
-    padding: 6px;
-    background-color: #f0f0f0;
-    border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.code-editor {
+    flex-grow: 1;
+    padding: 10px;
+    font-family: monospace;
+    background-color: #fff;
+    outline: none;
+    overflow: auto;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f9f9f9;
+}
+
+h1 {
+    color: #333;
+}
+
+.toolbar {
+    margin-bottom: 15px;
+}
+
+button {
+    background-color: #4CAF50;
     border: none;
-    object-fit: contain;
+    color: white;
+    padding: 10px 20px;
+    margin-right: 10px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    border-radius: 5px;
     cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    transition: background-color 0.3s ease;
 }
 
-.button img {
-    width: 24px;
-    height: 24px;
+button:hover {
+    background-color: #45a049;
 }
 
-.ter_toolbar button:hover {
-    background-color: #e0e0e0;
-}
-
-.ter_toolbar button:disabled img {
-    opacity: 0.5;
-    filter: grayscale(100%);
-    cursor: not-allowed;
+button:active {
+    transform: scale(0.98);
 }
