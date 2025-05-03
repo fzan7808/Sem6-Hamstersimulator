@@ -1,40 +1,81 @@
-.ter_toolbar {
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+}
+.toolbar, .ter_toolbar {
     display: flex;
+    flex-wrap: nowrap; /* keep items on one row */
+    align-items: center;
+    gap: 8px;
+    background-color: #f5f5f5;
+    padding: 4px;
+    border-bottom: 1px solid #ccc;
+}
+.toolbar a {
+    margin-right: 16px;
+    text-decoration: none;
+    color: black;
+}
+.ter_toolbar {
+    flex-wrap: nowrap; /* ensure no wrapping */
     gap: 16px;
 }
-
-.ter_toolbar > div {
+#gridContainer {
+    width: 100%;
+    height: calc(100vh - 120px);
     display: flex;
-    gap: 8px;
+    justify-content: center;
     align-items: center;
 }
-
+#grid {
+    display: grid;
+    grid-gap: 2px;
+}
+#grid div {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #ccc;
+}
 .ter_toolbar button {
     width: 36px;
     height: 36px;
     padding: 6px;
     background-color: #f0f0f0;
     border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     border: none;
-    object-fit: contain;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
 }
-
-.button img {
-    width: 24px;
-    height: 24px;
-}
-
 .ter_toolbar button:hover {
     background-color: #e0e0e0;
 }
-
 .ter_toolbar button:disabled img {
     opacity: 0.5;
     filter: grayscale(100%);
     cursor: not-allowed;
+}
+/* modal (used for both Territory and Corn inputs) */
+.modal {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.3);
+}
+.modal-content {
+    background: #fff;
+    padding: 16px;
+    margin: 100px auto;
+    width: 300px;
+    border-radius: 4px;
+}
+.modal-content input {
+    width: 100%;
+    margin-bottom: 8px;
 }
