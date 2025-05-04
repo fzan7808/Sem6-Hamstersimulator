@@ -1,3 +1,4 @@
+// ter.js
 document.addEventListener('DOMContentLoaded', () => {
     let currentTool = null;
     let gridElement = null;
@@ -9,12 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const cornModal      = document.getElementById('cornModal');
     const fileInput      = document.getElementById('fileInput');
     const cornDisplay    = document.getElementById('cornDisplay');
-    const themeToggle    = document.getElementById('themeToggle');
 
-    // ─── Helpers ────────────────────────────────────────────────────────────────
+    // Update the lower-right Körner-im-Maul display
     function updateCornDisplay() {
         cornDisplay.textContent = `Körner im Maul: ${hamMouthCount}`;
     }
+
+    // Show/hide modals by toggling the 'hidden' class
     function showTerritoryModal() { territoryModal.classList.remove('hidden'); }
     function hideTerritoryModal() { territoryModal.classList.add('hidden'); }
     function showCornModal() {
@@ -23,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function hideCornModal() { cornModal.classList.add('hidden'); }
 
-    // ─── Build Grid ─────────────────────────────────────────────────────────────
+    // Build a new empty grid of the given dimensions
     function buildGrid(rows, cols) {
         const container = document.getElementById('gridContainer');
         if (gridElement) gridElement.remove();
@@ -45,25 +47,28 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCornDisplay();
     }
 
-    // ─── New Territory ─────────────────────────────────────────────────────────
+    // ── New Territory ────────────────────────────────────────────────────────────
     document.getElementById('newTerritory').addEventListener('click', showTerritoryModal);
     document.getElementById('createTerritoryConfirm').addEventListener('click', () => {
-        const r = parseInt(document.getElementById('rows').value, 10);
-        const c = parseInt(document.getElementById('cols').value, 10);
-        if (!r || !c) { alert('Ungültige Werte'); return; }
-        buildGrid(r, c);
+        const rows = parseInt(document.getElementById('rows').value, 10);
+        const cols = parseInt(document.getElementById('cols').value, 10);
+        if (!rows || !cols) {
+            alert('Ungültige Werte');
+            return;
+        }
+        buildGrid(rows, cols);
         hideTerritoryModal();
     });
     document.getElementById('createTerritoryCancel').addEventListener('click', hideTerritoryModal);
 
-    // ─── Load Territory ────────────────────────────────────────────────────────
+    // ── Load Territory from .ter file ───────────────────────────────────────────
     document.getElementById('openTerritory').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', e => {
-        const file = e.target.files[0];
-        if (!file) return;
+        const f = e.target.files[0];
+        if (!f) return;
         const reader = new FileReader();
-        reader.onload = evt => processTerritoryFile(evt.target.result);
-        reader.readAsText(file);
+        reader.onload = ev => processTerritoryFile(ev.target.result);
+        reader.readAsText(f);
         fileInput.value = '';
     });
 
@@ -77,50 +82,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadScriptTerritory(lines) {
-        const init = /initializeTerritory\s*\(\s*new Size\((\d+),\s*(\d+)\)\s*\)/.exec(lines[0]);
-        if (!init) { alert('Invalid script header'); return; }
-        const rows = +init[1], cols = +init[2];
+        // Header: initializeTerritory(new Size(cols, rows));
+        const initRe = /initializeTerritory\s*\(\s*new Size\((\d+),\s*(\d+)\)\s*\)/;
+        const m0 = initRe.exec(lines[0]);
+        if (!m0) { alert('Invalid script header'); return; }
+        const cols = +m0[1], rows = +m0[2];
         buildGrid(rows, cols);
 
-        let hamX, hamY, hamRot;
+        // defaultHamsterAt(new Location(x,y), Direction.X, mouthCount);
         const hamRe = /defaultHamsterAt\s*\(\s*new Location\((\d+),\s*(\d+)\),\s*Direction\.([A-Z]+),\s*(\d+)\)/;
+        let hamX, hamY, hamRot;
         lines.forEach(line => {
             const m = hamRe.exec(line);
             if (m) {
                 hamX = +m[1];
                 hamY = +m[2];
-                hamRot = { EAST:0, SOUTH:90, WEST:180, NORTH:270 }[m[3]] || 0;
+                const dir = m[3];
+                hamRot = { EAST:0, SOUTH:90, WEST:180, NORTH:270 }[dir] || 0;
                 hamMouthCount = +m[4];
             }
         });
 
-        let m;
+        // Walls: wallAt(new Location(x,y));
         const wallRe = /wallAt\s*\(\s*new Location\((\d+),\s*(\d+)\)\s*\)/g;
-        while (m = wallRe.exec(lines.join('\n'))) {
-            const x = +m[1], y = +m[2];
+        let w;
+        while (w = wallRe.exec(lines.join('\n'))) {
+            const x = +w[1], y = +w[2];
             const cell = gridElement.children[y * cols + x];
-            cell.innerHTML = `<img src="../data/wand/Wall32.png" style="width:100%;height:100%;">`;
+            cell.innerHTML = '<img src="data/wand/Wall32.png" style="width:100%;height:100%;">';
             cell.dataset.wall = 'true';
         }
 
+        // Grains: grainAt(new Location(x,y), count);
         const grainRe = /grainAt\s*\(\s*new Location\((\d+),\s*(\d+)\)\s*,\s*(\d+)\s*\)/g;
-        while (m = grainRe.exec(lines.join('\n'))) {
-            const x = +m[1], y = +m[2], cnt = +m[3];
+        let g;
+        while (g = grainRe.exec(lines.join('\n'))) {
+            const x = +g[1], y = +g[2], cnt = +g[3];
             const cell = gridElement.children[y * cols + x];
             cell.dataset.cornCount = cnt;
             const draw = Math.min(cnt, 12);
-            cell.innerHTML = `<img src="../assets/körner/${draw}Corn32.png" style="width:100%;height:100%;">`;
+            cell.innerHTML = `<img src="../data/körner/${draw}Corn32.png" style="width:100%;height:100%;">`;
         }
 
+        // Place hamster last
         if (hamX != null) {
             const cell = gridElement.children[hamY * cols + hamX];
-            cell.innerHTML = `<img src="../assets/hamster/hamstereast.png"
-                                 style="width:100%;height:100%;transform:rotate(${hamRot}deg);">`;
+            cell.innerHTML = `<img src="../data/hamster/hamstereast.png"
+                            style="width:100%;height:100%;transform:rotate(${hamRot}deg);">`;
+            cell.dataset.hasHamster = 'true';
+            cell.dataset.rotation   = hamRot;
         }
+
         updateCornDisplay();
     }
 
     function loadAsciiTerritory(lines) {
+        // First two lines: cols, rows
         const cols = parseInt(lines[0], 10);
         const rows = parseInt(lines[1], 10);
         if (isNaN(cols) || isNaN(rows)) {
@@ -136,12 +153,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let hamX, hamY, hamRot;
         const cornPos = [];
+
+        // Map characters
         ascii.forEach((row, y) => {
             for (let x = 0; x < cols; x++) {
                 const ch = row[x];
                 const cell = gridElement.children[y * cols + x];
                 if (ch === '#') {
-                    cell.innerHTML = `<img src="../assets/wand/Wall32.png" style="width:100%;height:100%;">`;
+                    cell.innerHTML = '<img src="../data/wand/Wall32.png" style="width:100%;height:100%;">';
                     cell.dataset.wall = 'true';
                 } else if ('>v<^'.includes(ch)) {
                     hamX = x; hamY = y;
@@ -155,36 +174,41 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        const countLines = lines
-            .slice(2 + rows, 2 + rows + cornPos.length + 1)
-            .map(l => parseInt(l, 10) || 0);
+        // Next lines: counts for each position, then hamster mouth count
+        const countLines = lines.slice(2 + rows, 2 + rows + cornPos.length + 1)
+            .map(l => parseInt(l,10) || 0);
 
+        // Draw corn at each '*' position
         cornPos.forEach((p, i) => {
             if (!p.isHam) {
                 const cnt = countLines[i];
                 const cell = gridElement.children[p.y * cols + p.x];
                 cell.dataset.cornCount = cnt;
                 const draw = Math.min(cnt, 12);
-                cell.innerHTML = `<img src="../assets/körner/${draw}Corn32.png" style="width:100%;height:100%;">`;
+                cell.innerHTML = `<img src="../data/körner/${draw}Corn32.png" style="width:100%;height:100%;">`;
             }
         });
         hamMouthCount = countLines[cornPos.length] || 0;
 
+        // Draw hamster
         if (hamX != null) {
             const cell = gridElement.children[hamY * cols + hamX];
-            cell.innerHTML = `<img src="../assets/hamster/hamstereast.png"
-                                 style="width:100%;height:100%;transform:rotate(${hamRot}deg);">`;
+            cell.innerHTML = `<img src="../data/hamster/hamstereast.png"
+                            style="width:100%;height:100%;transform:rotate(${hamRot}deg);">`;
         }
+
         updateCornDisplay();
     }
 
-    // ─── Save Territory ────────────────────────────────────────────────────────
+    // ── Save Territory to .ter file ─────────────────────────────────────────────
     document.getElementById('saveTerritory').addEventListener('click', () => {
         if (!gridElement) { alert('Kein Territorium'); return; }
-        const cols  = parseInt(gridElement.style.gridTemplateColumns.match(/\d+/)[0], 10);
-        const cells = Array.from(gridElement.children);
-        const rows  = cells.length / cols;
 
+        const cols = parseInt(gridElement.style.gridTemplateColumns.match(/\d+/)[0], 10);
+        const cells = Array.from(gridElement.children);
+        const rows = cells.length / cols;
+
+        // 1) ASCII map
         const ascii = [];
         for (let y = 0; y < rows; y++) {
             let line = '';
@@ -196,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (cell.dataset.hasHamster === 'true') {
                     const r = parseInt(cell.dataset.rotation || '0', 10);
                     ch = {0:'>',90:'v',180:'<',270:'^'}[r] || '>';
-                } else if (parseInt(cell.dataset.cornCount, 10) > 0) {
+                } else if (parseInt(cell.dataset.cornCount,10) > 0) {
                     ch = '*';
                 }
                 line += ch;
@@ -204,33 +228,45 @@ document.addEventListener('DOMContentLoaded', () => {
             ascii.push(line);
         }
 
+        // 2) Positions of '*' or hamster
         const cornPos = [];
-        ascii.forEach((row, y) =>
+        ascii.forEach((row, y) => {
             row.split('').forEach((ch, x) => {
                 if (ch === '*' || '><^v'.includes(ch)) {
                     cornPos.push({ x, y, isHam: '><^v'.includes(ch) });
                 }
-            })
-        );
+            });
+        });
 
+        // 3) Counts for each, then mouth count
         const counts = cornPos.map(p => {
             const cell = cells[p.y * cols + p.x];
-            return parseInt(cell.dataset.cornCount, 10) || 0;
+            return parseInt(cell.dataset.cornCount,10) || 0;
         });
         counts.push(hamMouthCount);
 
-        const content = [cols, rows, ...ascii, ...counts].join('\n');
-        const blob    = new Blob([content], { type:'text/plain' });
-        const url     = URL.createObjectURL(blob);
-        const a       = document.createElement('a');
-        a.href        = url;
-        a.download    = 'territory.ter';
+        // 4) Combine
+        const content = [
+            cols,
+            rows,
+            ...ascii,
+            ...counts
+        ].join('\n');
+
+        // 5) Trigger download
+        const blob = new Blob([content], { type:'text/plain' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = 'territory.ter';
         a.click();
         URL.revokeObjectURL(url);
     });
 
-    // ─── Tools & Handlers ─────────────────────────────────────────────────────
-    document.getElementById('placeHamster').addEventListener('click', () => currentTool = 'hamster');
+    // ── Tool Buttons ────────────────────────────────────────────────────────────
+    document.getElementById('placeHamster').addEventListener('click', () => {
+        currentTool = 'hamster';
+    });
     document.getElementById('placeHamsterCorn').addEventListener('click', () => {
         if (!gridElement) { alert('Erst Territorium erstellen'); return; }
         const ham = gridElement.querySelector('[data-has-hamster="true"]');
@@ -239,11 +275,17 @@ document.addEventListener('DOMContentLoaded', () => {
         modalTarget = ham;
         showCornModal();
     });
-    document.getElementById('placeCorn').addEventListener('click', () => currentTool = 'corn');
-    document.getElementById('placeWall').addEventListener('click', () => currentTool = 'wall');
-    document.getElementById('deleteItem').addEventListener('click', () => currentTool = 'delete');
+    document.getElementById('placeCorn').addEventListener('click', () => {
+        currentTool = 'corn';
+    });
+    document.getElementById('placeWall').addEventListener('click', () => {
+        currentTool = 'wall';
+    });
+    document.getElementById('deleteItem').addEventListener('click', () => {
+        currentTool = 'delete';
+    });
 
-    // Zoom In/Out
+    // Zoom
     document.getElementById('zoomIn').addEventListener('click', () => {
         if (!gridElement) return;
         let s = parseFloat(gridElement.dataset.scale) || 1;
@@ -267,7 +309,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let r = parseInt(cell.dataset.rotation || '0', 10);
         r = (r + 270) % 360;
         cell.dataset.rotation = r;
-        cell.querySelector('img').style.transform = `rotate(${r}deg)`;
+        const img = cell.querySelector('img');
+        if (img) img.style.transform = `rotate(${r}deg)`;
     });
 
     // Körner Modal OK/Cancel
@@ -284,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             const c = Math.min(val, 12);
             modalTarget.dataset.cornCount = c;
-            modalTarget.innerHTML = `<img src="../assets/körner/${c}Corn32.png" style="width:100%;height:100%;">`;
+            modalTarget.innerHTML = `<img src="../data/körner/${c}Corn32.png" style="width:100%;height:100%;">`;
         }
         hideCornModal();
         modalTool   = null;
@@ -296,12 +339,11 @@ document.addEventListener('DOMContentLoaded', () => {
         modalTarget = null;
     });
 
-    // Cell Click Handler
+    // Grid Cell Click Handler
     document.body.addEventListener('click', e => {
         if (!gridElement) return;
         const cell = e.target.closest('div');
         if (!cell || cell.parentNode !== gridElement) return;
-
         switch (currentTool) {
             case 'hamster':
                 const old = gridElement.querySelector('[data-has-hamster="true"]');
@@ -312,52 +354,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     old.dataset.cornCount = '0';
                 }
                 if (cell.dataset.hasHamster === 'false') {
-                    cell.innerHTML = `<img src="../assets/hamster/hamstereast.png" style="width:100%;height:100%;transform:rotate(0deg);">`;
+                    cell.innerHTML = `<img src="../data/hamster/hamstereast.png"
+                               style="width:100%;height:100%;transform:rotate(0deg);">`;
                     cell.dataset.hasHamster = 'true';
                     cell.dataset.rotation   = '0';
-                    cell.dataset.cornCount   = '0';
                     hamMouthCount = 0;
                     updateCornDisplay();
                 }
                 break;
-
             case 'corn':
                 modalTool   = 'corn';
                 modalTarget = cell;
                 showCornModal();
                 break;
-
             case 'wall':
                 if (cell.dataset.wall === 'true') {
                     cell.innerHTML = '';
                     cell.dataset.wall = 'false';
                 } else {
-                    cell.innerHTML = `<img src="../assets/wand/Wall32.png" style="width:100%;height:100%;">`;
+                    cell.innerHTML = `<img src="../data/wand/Wall32.png" style="width:100%;height:100%;">`;
                     cell.dataset.wall = 'true';
                 }
                 break;
-
             case 'delete':
-                cell.innerHTML           = '';
-                cell.dataset.hasHamster  = 'false';
-                cell.dataset.cornCount   = '0';
-                cell.dataset.wall        = 'false';
+                cell.innerHTML          = '';
+                cell.dataset.hasHamster = 'false';
+                cell.dataset.cornCount  = '0';
+                cell.dataset.wall       = 'false';
                 delete cell.dataset.rotation;
                 hamMouthCount = 0;
                 updateCornDisplay();
                 break;
+            default:
+                break;
         }
     });
 
-    // Theme toggle
-    themeToggle.addEventListener('click', () => {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        if (isDark) {
-            document.documentElement.removeAttribute('data-theme');
-            themeToggle.textContent = '☀️';
-        } else {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            themeToggle.textContent = '🌙';
-        }
-    });
 });
