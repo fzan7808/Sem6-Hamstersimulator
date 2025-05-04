@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         while (m = wallRe.exec(lines.join('\n'))) {
             const x = +m[1], y = +m[2];
             const cell = gridElement.children[y * cols + x];
-            cell.innerHTML = `<img src="../assets/wand/Wall32.png" style="width:100%;height:100%;">`;
+            cell.innerHTML = `<img src="../data/wand/Wall32.png" style="width:100%;height:100%;">`;
             cell.dataset.wall = 'true';
         }
 
