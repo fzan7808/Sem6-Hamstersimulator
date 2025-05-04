@@ -1,80 +1,69 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Hamstersimulator</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="ter_style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="ter_style.css" />
 </head>
 <body>
-<!-- 1) Links-Bar -->
-<div class="toolbar">
-    <a href="edit.html">Editor</a>
-    <a href="ter.html">Territorium</a>
+<!-- Top Navigation -->
+<div class="page-nav">
+    <a href="index.html" class="page-nav__link">Startseite</a>
+    <a href="edit.html"  class="page-nav__link">Editor</a>
+    <a href="ter.html"   class="page-nav__link is-active">Territorium</a>
 </div>
 
-<!-- 2) Buttons-Bar -->
-<div class="ter_toolbar">
-    <button id="newTerritory"><img src="../assets/leiste/New24.gif" alt="Neues Territorium"></button>
-    <button id="openTerritory"><img src="../assets/leiste/Open24.gif" alt="Territorium öffnen"></button>
-    <button id="saveTerritory"><img src="../assets/leiste/SaveAs24.gif" alt="Territorium speichern"></button>
-
-    <button id="placeHamster"><img src="../assets/hamster/hamstereast.png" alt="Hamster versetzen"></button>
-    <button id="rotateBtn"><img src="../assets/leiste/Turn24.gif"     alt="Hamster drehen"></button>
-    <button id="placeHamsterCorn"><img src="../assets/leiste/HamsterCorn24.png" alt="HamsterCorn"></button>
-    <button id="placeCorn"><img src="../assets/leiste/Corn24.gif"      alt="Körner"></button>
-    <button id="placeWall"><img src="../assets/wand/Wall32.png"        alt="Wall"></button>
-    <button id="deleteItem"><img src="../assets/leiste/Delete32.gif"   alt="Delete"></button>
-
-    <button id="zoomIn"><img src="../assets/leiste/ZoomIn24.gif"  alt="ZoomIn"></button>
-    <button id="zoomOut"><img src="../assets/leiste/ZoomOut24.gif" alt="ZoomOut"></button>
-    <button disabled><img src="../assets/leiste/StepBack24.gif" alt="StepBack"></button>
-    <button disabled><img src="../assets/leiste/Play24.gif"     alt="Play"></button>
-    <button disabled><img src="../assets/leiste/Pause24.gif"    alt="Pause"></button>
-    <button disabled><img src="../assets/leiste/Stop24.gif"     alt="Stop"></button>
+<!-- Territorium Toolbar -->
+<div class="toolbar ter_toolbar">
+    <button id="newTerritory"     title="Neues Territorium"><img src="../assets/leiste/New24.gif"       alt="Neu"/></button>
+    <button id="openTerritory"    title="Territorium öffnen"><img src="../assets/leiste/Open24.gif"      alt="Öffnen"/></button>
+    <button id="saveTerritory"    title="Territorium speichern"><img src="../assets/leiste/SaveAs24.gif"    alt="Speichern"/></button>
+    <button id="placeHamster"     title="Hamster versetzen"><img src="../assets/hamster/hamstereast.png" alt="Hamster"/></button>
+    <button id="rotateBtn"        title="Hamster drehen"><img src="../assets/leiste/Turn24.gif"      alt="Drehen"/></button>
+    <button id="placeHamsterCorn" title="Hamster-Körner"><img src="../assets/leiste/HamsterCorn24.png" alt="HamsterCorn"/></button>
+    <button id="placeCorn"        title="Körner setzen"><img src="../assets/leiste/Corn24.gif"       alt="Körner"/></button>
+    <button id="placeWall"        title="Wand setzen"><img src="../assets/wand/Wall32.png"         alt="Wall"/></button>
+    <button id="deleteItem"       title="Element löschen"><img src="../assets/leiste/Delete32.gif"    alt="Delete"/></button>
+    <button id="zoomIn"           title="Zoom vergrößern"><img src="../assets/leiste/ZoomIn24.gif"    alt="ZoomIn"/></button>
+    <button id="zoomOut"          title="Zoom verkleinern"><img src="../assets/leiste/ZoomOut24.gif"   alt="ZoomOut"/></button>
+    <button disabled title="Schritt zurück"><img src="../assets/leiste/StepBack24.gif" alt="StepBack"/></button>
+    <button disabled title="Abspielen"><img src="../assets/leiste/Play24.gif"      alt="Play"/></button>
+    <button disabled title="Pause"><img src="../assets/leiste/Pause24.gif"     alt="Pause"/></button>
+    <button disabled title="Stopp"><img src="../assets/leiste/Stop24.gif"      alt="Stop"/></button>
 </div>
 
-<!-- hidden file input for .ter -->
-<input type="file" id="fileInput" accept=".ter" style="display:none">
+<!-- Hidden file input -->
+<input type="file" id="fileInput" accept=".ter" hidden />
 
+<!-- Grid & Corn Display -->
 <div id="gridContainer"></div>
+<div id="cornDisplay" class="corn-display">Körner im Maul: 0</div>
 
-<!-- lower-right corn display -->
-<div id="cornDisplay" style="
-      position:fixed;
-      bottom:8px;
-      right:8px;
-      background:rgba(0,0,0,0.6);
-      color:white;
-      padding:4px 8px;
-      border-radius:4px;
-      font-weight:bold;
-      pointer-events:none;
-      ">
-    Körner im Maul: 0
-</div>
-
-<!-- Territorium-Modal -->
-<div id="territoryModal" class="modal">
+<!-- Territorium Modal -->
+<div id="territoryModal" class="modal hidden">
     <div class="modal-content">
         <label for="rows">Zeilen:</label>
-        <input type="number" id="rows" min="1" placeholder="Anzahl der Zeilen">
+        <input type="number" id="rows" min="1" placeholder="Zeilen"/>
         <label for="cols">Spalten:</label>
-        <input type="number" id="cols" min="1" placeholder="Anzahl der Spalten">
+        <input type="number" id="cols" min="1" placeholder="Spalten"/>
         <button id="createTerritoryConfirm">Erstellen</button>
         <button id="createTerritoryCancel">Abbrechen</button>
     </div>
 </div>
 
-<!-- Körner-Modal -->
-<div id="cornModal" class="modal">
+<!-- Körner Modal -->
+<div id="cornModal" class="modal hidden">
     <div class="modal-content">
-        <label for="cornCountInput">Anzahl der Körner (1–12):</label>
-        <input type="number" id="cornCountInput" min="1" max="12" placeholder="1–12">
+        <label for="cornCountInput">Körner (1–12):</label>
+        <input type="number" id="cornCountInput" min="1" max="12" placeholder="1–12"/>
         <button id="cornConfirm">OK</button>
         <button id="cornCancel">Abbrechen</button>
     </div>
 </div>
+
+<!-- Theme Toggle Button -->
+<button id="themeToggle" class="theme-toggle-button" title="Light / Dark">☀️</button>
 
 <script src="ter.js"></script>
 </body>

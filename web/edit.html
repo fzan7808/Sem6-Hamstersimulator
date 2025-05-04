@@ -1,24 +1,37 @@
 <!doctype html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Hamster-Editor</title>
-    <link rel="stylesheet" href="edit_style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="edit_style.css"/>
 </head>
 <body>
-<h1>Hamster-Editor</h1>
-<div class="toolbar">
-    <button id="newBtn">Neue Datei</button>
-    <button id="openBtn">Datei öffnen</button>
-    <button id="saveBtn">Datei speichern</button>
-    <input type="file" id="fileInput" accept=".java" style="display: none;">
-    <div class="editor-container">
-        <div class="line-numbers" id="line-numbers"></div>
-        <div class="code-editor" id="code-editor" contenteditable="true" spellcheck="false"></div>
-    </div>
+<!-- Top Navigation -->
+<div class="page-nav">
+    <a href="index.html" class="page-nav__link">Startseite</a>
+    <a href="edit.html"  class="page-nav__link is-active">Editor</a>
+    <a href="ter.html"   class="page-nav__link">Territorium</a>
 </div>
+
+<!-- Editor Toolbar -->
+<div class="toolbar">
+    <button id="newBtn"  title="Neue Datei"><img src="../assets/leiste/New24.gif"    alt="Neu"/></button>
+    <button id="openBtn" title="Datei öffnen"><img src="../assets/leiste/Open24.gif"   alt="Öffnen"/></button>
+    <button id="saveBtn" title="Datei speichern"><img src="../assets/leiste/SaveAs24.gif" alt="Speichern"/></button>
+    <button id="runBtn"  title="Run → Territorium"><img src="../assets/leiste/Play24.gif"    alt="Run"/></button>
+    <input type="file" id="fileInput" accept=".java" hidden/>
+</div>
+
+<!-- Editor Area -->
+<div class="editor-container">
+    <div id="line-numbers" class="line-numbers"></div>
+    <div id="code-editor"  class="code-editor" contenteditable="true" spellcheck="false"></div>
+</div>
+
+<!-- Theme Toggle Button -->
+<button id="themeToggle" class="theme-toggle-button" title="Light / Dark">☀️</button>
 
 <script src="edit.js"></script>
 </body>
