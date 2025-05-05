@@ -1,0 +1,65 @@
+/* edit_style.css */
+/* ─────────────────────────────────────────────────────────────────────────────
+   Editor Panel Only
+───────────────────────────────────────────────────────────────────────────── */
+.editor-container {
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 88px);
+    border: 2px solid #333;
+    border-radius: 5px;
+    overflow: hidden;
+    background: #fff;
+}
+.line-numbers {
+    background: #f4f4f4;
+    padding: 16px 8px;
+    text-align: right;
+    user-select: none;
+    color: #999;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.6;
+}
+.code-editor {
+    flex-grow: 1;
+    padding: 16px;
+    font-family: 'Fira Code', monospace;
+    font-size: 15px;
+    line-height: 1.6;
+    background: #fff;
+    color: #2d2d2d;
+    overflow: auto;
+    white-space: pre;
+    outline: none;
+}
+@media (prefers-color-scheme: dark) {
+    .editor-container {
+        background: #1e1e1e;
+        border-color: #333;
+    }
+    .line-numbers {
+        background: #2a2a2a;
+        color: #777;
+    }
+    .code-editor {
+        background: #1e1e1e;
+        color: #ddd;
+    }
+}
+/* File: edit_style.css */
+/* ─────────────────────────────────────────────────────────────────────────────
+   Editor Panel Only
+───────────────────────────────────────────────────────────────────────────── */
+.editor-container {
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 88px);
+    border: 2px solid #333;
+    border-radius: 5px;
+    overflow: hidden;
+    background: #fff;
+}
+.CodeMirror {
+    height: 100%;
+}
