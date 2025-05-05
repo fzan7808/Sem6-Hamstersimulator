@@ -1,22 +1,27 @@
-<!-- edit.html -->
-<!doctype html>
+<!-- File: edit.html -->
+<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Hamster-Editor</title>
 
-    <!-- CodeMirror Styles -->
+    <!-- CodeMirror core CSS -->
     <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css"
     />
+    <!-- Light theme -->
     <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/eclipse.min.css"
     />
+    <!-- Dark theme -->
+    <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css"
+    />
 
-    <!-- Your own styles -->
     <link rel="stylesheet" href="ter_style.css"/>
     <link rel="stylesheet" href="edit_style.css"/>
 </head>
@@ -36,11 +41,10 @@
 </div>
 
 <div class="editor-container">
-    <!-- CodeMirror will replace this -->
-    <textarea id="code-editor" spellcheck="false"></textarea>
+    <textarea id="code-editor"></textarea>
 </div>
 
-<!-- CodeMirror Scripts -->
+<!-- CodeMirror scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/matchbrackets.min.js"></script>

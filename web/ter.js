@@ -1,11 +1,18 @@
-// ter.js
+// File: ter.js
 document.addEventListener('DOMContentLoaded', () => {
     // ── State & Element References ─────────────────────────────────────────────
-    let currentTool = null,
-        gridElement = null,
-        modalTool = null,
-        modalTarget = null,
-        hamMouthCount = 0;
+    let currentTool      = null,
+        gridElement      = null,
+        modalTool        = null,
+        modalTarget      = null,
+        hamMouthCount    = 0,
+        initialSnapshot  = null,
+        userGen          = null,
+        timer            = null;
+
+    const TERR_KEY = "hamsterTerritory";
+    const CODE_KEY = "hamsterCode";
+    const RUN_KEY  = "runPending";
 
     const territoryModal = document.getElementById('territoryModal');
     const cornModal      = document.getElementById('cornModal');
@@ -18,17 +25,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const pauseBtn    = document.querySelector('button[title="Pause"]');
     const stopBtn     = document.querySelector('button[title="Stop"]');
 
-    // ── Display Helpers ────────────────────────────────────────────────────────
+    // ── Helpers ────────────────────────────────────────────────────────────────
     function updateCornDisplay() {
         cornDisplay.textContent = `Körner im Maul: ${hamMouthCount}`;
     }
-    function showTerritoryModal() { territoryModal.classList.remove('hidden'); }
-    function hideTerritoryModal() { territoryModal.classList.add('hidden'); }
-    function showCornModal() {
-        document.getElementById('cornCountInput').value = '';
-        cornModal.classList.remove('hidden');
+    function snapshot() {
+        return localStorage.getItem(TERR_KEY) + '||' + hamMouthCount;
     }
-    function hideCornModal() { cornModal.classList.add('hidden'); }
+    function restore(s) {
+        const [terr, mouth] = s.split('||');
+        localStorage.setItem(TERR_KEY, terr);
+        loadTerritoryState();
+        hamMouthCount = +mouth;
+        updateCornDisplay();
+    }
+
+    function drawCell(cell) {
+        cell.innerHTML = '';
+        if (cell.dataset.wall === 'true') {
+            cell.innerHTML = '<img src="data/wand/Wall32.png" style="width:100%;height:100%;">';
+        } else {
+            const cnt = +cell.dataset.cornCount;
+            if (cnt > 0) {
+                const d = Math.min(cnt, 12);
+                cell.innerHTML = `<img src="data/körner/${d}Corn32.png" style="width:100%;height:100%;">`;
+            }
+        }
+        cell.style.position = 'relative';
+    }
+
+    function renderHamster(cell, rot) {
+        gridElement.querySelectorAll('[data-has-hamster="true"]').forEach(old => {
+            old.dataset.hasHamster = 'false';
+            drawCell(old);
+        });
+        cell.dataset.hasHamster = 'true';
+        cell.dataset.rotation   = rot;
+        drawCell(cell);
+        const img = document.createElement('img');
+        img.src = 'data/hamster/hamstereast.png';
+        img.style.cssText = `
+            width:100%;height:100%;position:absolute;
+            top:0;left:0;transform:rotate(${rot}deg);
+        `;
+        cell.appendChild(img);
+    }
 
     // ── Grid Construction ─────────────────────────────────────────────────────
     function buildGrid(rows, cols) {
@@ -44,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cell.dataset.hasHamster = 'false';
             cell.dataset.cornCount  = '0';
             cell.dataset.wall       = 'false';
+            drawCell(cell);
             gridElement.appendChild(cell);
         }
         container.innerHTML = '';
@@ -52,110 +94,85 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCornDisplay();
     }
 
-    // ── State Persistence ──────────────────────────────────────────────────────
+    // ── Persistence ────────────────────────────────────────────────────────────
     function saveTerritoryState() {
         if (!gridElement) return;
-        const cols = parseInt(gridElement.style.gridTemplateColumns.match(/\d+/)[0],10);
+        const cols = +gridElement.style.gridTemplateColumns.match(/\d+/)[0];
         const rows = gridElement.children.length / cols;
         const cells = Array.from(gridElement.children).map(c => ({
             hasHamster: c.dataset.hasHamster === 'true',
-            rotation:   c.dataset.rotation ? parseInt(c.dataset.rotation,10) : 0,
+            rotation:   +c.dataset.rotation || 0,
             wall:       c.dataset.wall === 'true',
-            cornCount:  parseInt(c.dataset.cornCount,10)
+            cornCount:  +c.dataset.cornCount
         }));
-        sessionStorage.setItem('hamsterTerritory',
+        localStorage.setItem(TERR_KEY,
             JSON.stringify({ cols, rows, cells, hamMouthCount })
         );
     }
 
     function loadTerritoryState() {
-        const s = sessionStorage.getItem('hamsterTerritory');
-        if (!s) return false;
+        const raw = localStorage.getItem(TERR_KEY);
+        if (!raw) return false;
         let st;
-        try { st = JSON.parse(s); } catch { return false; }
+        try { st = JSON.parse(raw); } catch { return false; }
         const { cols, rows, cells, hamMouthCount: mouth } = st;
         if (!Array.isArray(cells) || cells.length !== rows * cols) return false;
         buildGrid(rows, cols);
         cells.forEach((c, idx) => {
             const cell = gridElement.children[idx];
-            if (c.wall) {
-                cell.dataset.wall = 'true';
-                cell.innerHTML = '<img src="data/wand/Wall32.png" style="width:100%;height:100%;">';
-            }
-            if (c.cornCount > 0) {
-                cell.dataset.cornCount = c.cornCount;
-                const d = Math.min(c.cornCount,12);
-                cell.innerHTML = `<img src="data/körner/${d}Corn32.png" style="width:100%;height:100%;">`;
-            }
-            if (c.hasHamster) {
-                cell.dataset.hasHamster = 'true';
-                cell.dataset.rotation   = c.rotation;
-                cell.innerHTML = `<img src="data/hamster/hamstereast.png"
-            style="width:100%;height:100%;transform:rotate(${c.rotation}deg);">`;
-            }
+            cell.dataset.wall       = c.wall      ? 'true' : 'false';
+            cell.dataset.cornCount  = c.cornCount + '';
+            cell.dataset.hasHamster = c.hasHamster ? 'true' : 'false';
+            if (c.hasHamster) cell.dataset.rotation = c.rotation + '';
+            drawCell(cell);
+            if (c.hasHamster) renderHamster(cell, c.rotation);
         });
         hamMouthCount = mouth;
         updateCornDisplay();
         return true;
     }
-
-    // restore on load, save on unload
     loadTerritoryState();
     window.addEventListener('beforeunload', saveTerritoryState);
 
-    // ── Territory Creation / Loading ──────────────────────────────────────────
-    document.getElementById('newTerritory')
-        .addEventListener('click', showTerritoryModal);
-
-    document.getElementById('createTerritoryConfirm')
-        .addEventListener('click', () => {
-            const rows = +document.getElementById('rows').value;
-            const cols = +document.getElementById('cols').value;
-            if (!rows || !cols) { alert('Ungültige Werte'); return; }
-            buildGrid(rows, cols);
-            hideTerritoryModal();
-            saveTerritoryState();
-        });
-
-    document.getElementById('createTerritoryCancel')
-        .addEventListener('click', hideTerritoryModal);
-
-    document.getElementById('openTerritory')
-        .addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', e => {
+    // ── Territory UI ──────────────────────────────────────────────────────────
+    document.getElementById('newTerritory').onclick = () => territoryModal.classList.remove('hidden');
+    document.getElementById('createTerritoryConfirm').onclick = () => {
+        const rows = +document.getElementById('rows').value;
+        const cols = +document.getElementById('cols').value;
+        if (!rows || !cols) return alert('Ungültige Werte');
+        buildGrid(rows, cols);
+        territoryModal.classList.add('hidden');
+        saveTerritoryState();
+    };
+    document.getElementById('createTerritoryCancel').onclick = () => territoryModal.classList.add('hidden');
+    document.getElementById('openTerritory').onclick = () => fileInput.click();
+    fileInput.onchange = e => {
         const f = e.target.files[0];
         if (!f) return;
-        const reader = new FileReader();
-        reader.onload = ev => {
+        const r = new FileReader();
+        r.onload = ev => {
             processTerritoryFile(ev.target.result);
             saveTerritoryState();
         };
-        reader.readAsText(f);
+        r.readAsText(f);
         fileInput.value = '';
-    });
+    };
 
     function processTerritoryFile(text) {
         const lines = text.split(/\r?\n/);
-        if (lines[0].startsWith('initializeTerritory')) {
-            loadScriptTerritory(lines);
-        } else {
-            loadAsciiTerritory(lines);
-        }
+        if (lines[0].startsWith('initializeTerritory')) loadScriptTerritory(lines);
+        else                                      loadAsciiTerritory(lines);
     }
 
-    // ── Script‐Based Load ─────────────────────────────────────────────────────
     function loadScriptTerritory(lines) {
-        const initRe = /initializeTerritory\s*\(\s*new Size\((\d+),\s*(\d+)\)\s*\)/;
-        const m0 = initRe.exec(lines[0]);
-        if (!m0) { alert('Invalid script header'); return; }
+        const m0 = /initializeTerritory\s*\(\s*new Size\((\d+),\s*(\d+)\)\)/.exec(lines[0]);
+        if (!m0) return alert('Invalid header');
         const cols = +m0[1], rows = +m0[2];
         buildGrid(rows, cols);
 
         let hamX, hamY, hamRot;
-        const hamRe = /defaultHamsterAt\s*\(\s*new Location\((\d+),\s*(\d+)\),\s*Direction\.([A-Z]+),\s*(\d+)\)/;
-        lines.forEach(line => {
-            const m = hamRe.exec(line);
+        lines.forEach(l => {
+            const m = /defaultHamsterAt\s*\(\s*new Location\((\d+),\s*(\d+)\),\s*Direction\.([A-Z]+),\s*(\d+)\)/.exec(l);
             if (m) {
                 hamX = +m[1]; hamY = +m[2];
                 hamRot = { EAST:0, SOUTH:90, WEST:180, NORTH:270 }[m[3]] || 0;
@@ -163,216 +180,151 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        const wallRe = /wallAt\s*\(\s*new Location\((\d+),\s*(\d+)\)\s*\)/g;
         let w;
-        while (w = wallRe.exec(lines.join('\n'))) {
+        while (w = /wallAt\s*\(\s*new Location\((\d+),\s*(\d+)\)\)/g.exec(lines.join('\n'))) {
             const x = +w[1], y = +w[2];
-            const cell = gridElement.children[y * cols + x];
-            cell.dataset.wall = 'true';
-            cell.innerHTML = '<img src="data/wand/Wall32.png" style="width:100%;height:100%;">';
+            gridElement.children[y*cols + x].dataset.wall = 'true';
         }
 
-        const grainRe = /grainAt\s*\(\s*new Location\((\d+),\s*(\d+)\)\s*,\s*(\d+)\s*\)/g;
         let g;
-        while (g = grainRe.exec(lines.join('\n'))) {
+        while (g = /grainAt\s*\(\s*new Location\((\d+),\s*(\d+)\)\s*,\s*(\d+)\)/g.exec(lines.join('\n'))) {
             const x = +g[1], y = +g[2], cnt = +g[3];
-            const cell = gridElement.children[y * cols + x];
-            cell.dataset.cornCount = cnt;
-            const d = Math.min(cnt,12);
-            cell.innerHTML = `<img src="data/körner/${d}Corn32.png" style="width:100%;height:100%;">`;
+            gridElement.children[y*cols + x].dataset.cornCount = cnt + '';
         }
 
         if (hamX != null) {
-            const cell = gridElement.children[hamY * cols + hamX];
+            const cell = gridElement.children[hamY*cols + hamX];
             cell.dataset.hasHamster = 'true';
-            cell.dataset.rotation   = hamRot;
-            cell.innerHTML = `<img src="data/hamster/hamstereast.png"
-          style="width:100%;height:100%;transform:rotate(${hamRot}deg);">`;
+            cell.dataset.rotation   = hamRot + '';
         }
 
+        gridElement.querySelectorAll('div').forEach(drawCell);
+        gridElement.querySelectorAll('[data-has-hamster="true"]').forEach(c => {
+            renderHamster(c, +c.dataset.rotation);
+        });
+
         updateCornDisplay();
-        saveTerritoryState();
     }
 
-    // ── ASCII‐Based Load ──────────────────────────────────────────────────────
     function loadAsciiTerritory(lines) {
-        const cols = parseInt(lines[0],10);
-        const rows = parseInt(lines[1],10);
-        if (isNaN(cols) || isNaN(rows)) { alert('Ungültige Dimension'); return; }
+        const cols = +lines[0], rows = +lines[1];
+        if (isNaN(cols) || isNaN(rows)) return alert('Ungültige Dimension');
         const ascii = lines.slice(2, 2 + rows);
-        if (ascii.some(r => r.length !== cols)) { alert('Zeilenlängen stimmen nicht'); return; }
+        if (ascii.some(r => r.length !== cols)) return alert('Zeilenlängen falsch');
         buildGrid(rows, cols);
 
         let hamX, hamY, hamRot;
         const cornPos = [];
-
-        ascii.forEach((row, y) => {
-            for (let x = 0; x < cols; x++) {
-                const ch = row[x];
-                const cell = gridElement.children[y * cols + x];
-                if (ch === '#') {
-                    cell.dataset.wall = 'true';
-                    cell.innerHTML = '<img src="data/wand/Wall32.png" style="width:100%;height:100%;">';
-                } else if ('>v<^'.includes(ch)) {
-                    hamX = x; hamY = y;
-                    hamRot = { '>':0,'v':90,'<':180,'^':270 }[ch];
-                    cell.dataset.hasHamster = 'true';
-                    cell.dataset.rotation   = hamRot;
-                    cornPos.push({ x, y, isHam: true });
-                } else if (ch === '*') {
-                    cornPos.push({ x, y, isHam: false });
-                }
+        ascii.forEach((row,y) => [...row].forEach((ch,x) => {
+            const cell = gridElement.children[y*cols + x];
+            if (ch === '#') {
+                cell.dataset.wall = 'true';
+            } else if (ch === '*') {
+                cornPos.push({x,y});
+            } else if ('>v<^'.includes(ch)) {
+                hamX = x; hamY = y;
+                hamRot = { '>':0,'v':90,'<':180,'^':270 }[ch];
+                cell.dataset.hasHamster = 'true';
+                cell.dataset.rotation   = hamRot + '';
             }
+        }));
+
+        const counts = lines.slice(2+rows,2+rows+cornPos.length+1).map(l=>+l||0);
+        cornPos.forEach((p,i) => {
+            gridElement.children[p.y*cols + p.x].dataset.cornCount = counts[i] + '';
         });
 
-        const counts = lines
-            .slice(2 + rows, 2 + rows + cornPos.length + 1)
-            .map(l => parseInt(l,10) || 0);
-
-        cornPos.forEach((p, i) => {
-            if (!p.isHam) {
-                const cell = gridElement.children[p.y * cols + p.x];
-                const cnt = counts[i];
-                cell.dataset.cornCount = cnt;
-                const d = Math.min(cnt,12);
-                cell.innerHTML = `<img src="data/körner/${d}Corn32.png" style="width:100%;height:100%;">`;
-            }
-        });
-
-        hamMouthCount = counts[cornPos.length] || 0;
         if (hamX != null) {
-            const cell = gridElement.children[hamY * cols + hamX];
-            cell.innerHTML = `<img src="data/hamster/hamstereast.png"
-          style="width:100%;height:100%;transform:rotate(${hamRot}deg);">`;
+            const cell = gridElement.children[hamY*cols + hamX];
+            cell.dataset.hasHamster = 'true';
+            cell.dataset.rotation   = hamRot + '';
         }
 
+        gridElement.querySelectorAll('div').forEach(drawCell);
+        gridElement.querySelectorAll('[data-has-hamster="true"]').forEach(c => {
+            renderHamster(c, +c.dataset.rotation);
+        });
+
+        hamMouthCount = counts[cornPos.length]||0;
         updateCornDisplay();
-        saveTerritoryState();
     }
 
-    // ── Save to .ter File ─────────────────────────────────────────────────────
-    document.getElementById('saveTerritory').addEventListener('click', () => {
-        if (!gridElement) { alert('Kein Territorium'); return; }
-        const cols = parseInt(gridElement.style.gridTemplateColumns.match(/\d+/)[0],10);
+    document.getElementById('saveTerritory').onclick = () => {
+        if (!gridElement) return alert('Kein Territorium');
+        const cols  = +gridElement.style.gridTemplateColumns.match(/\d+/)[0];
         const cells = Array.from(gridElement.children);
-        const rows = cells.length / cols;
-
+        const rows  = cells.length / cols;
         const ascii = [];
-        for (let y = 0; y < rows; y++) {
+
+        for (let y=0; y<rows; y++) {
             let line = '';
-            for (let x = 0; x < cols; x++) {
-                const c = cells[y * cols + x];
-                if (c.dataset.wall === 'true') line += '#';
-                else if (c.dataset.hasHamster === 'true') {
-                    const r = parseInt(c.dataset.rotation,10);
-                    line += {0:'>',90:'v',180:'<',270:'^'}[r] || '>';
-                }
-                else if (parseInt(c.dataset.cornCount,10) > 0) line += '*';
-                else line += ' ';
+            for (let x=0; x<cols; x++) {
+                const c = cells[y*cols + x];
+                if (c.dataset.wall==='true')             line += '#';
+                else if (c.dataset.hasHamster==='true') line += {0:'>',90:'v',180:'<',270:'^'}[+c.dataset.rotation];
+                else if (+c.dataset.cornCount > 0)      line += '*';
+                else                                     line += ' ';
             }
             ascii.push(line);
         }
 
         const cornPos = [];
-        ascii.forEach((row, y) =>
-            row.split('').forEach((ch, x) => {
-                if (ch === '*' || '><^v'.includes(ch)) {
-                    cornPos.push({ x, y, isHam: '><^v'.includes(ch) });
-                }
-            })
-        );
-
-        const counts = cornPos.map(p =>
-            parseInt(cells[p.y * cols + p.x].dataset.cornCount,10) || 0
-        );
+        ascii.forEach((r,y) => [...r].forEach((ch,x) => {
+            if (ch==='*' || '><^v'.includes(ch)) cornPos.push({x,y});
+        }));
+        const counts = cornPos.map(p=>+gridElement.children[p.y*cols + p.x].dataset.cornCount);
         counts.push(hamMouthCount);
 
-        const content = [cols, rows, ...ascii, ...counts].join('\n');
-        const blob = new Blob([content], { type:'text/plain' });
+        const blob = new Blob([[cols,rows,...ascii,...counts].join('\n')], {type:'text/plain'});
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
         a.href     = url;
         a.download = 'territory.ter';
         a.click();
         URL.revokeObjectURL(url);
-    });
+    };
 
-    // ── Tools & Interaction ───────────────────────────────────────────────────
-    document.getElementById('placeHamster')
-        .addEventListener('click', () => currentTool = 'hamster');
-    document.getElementById('placeHamsterCorn')
-        .addEventListener('click', () => {
-            if (!gridElement) return alert('Erst Territorium erstellen');
-            const ham = gridElement.querySelector('[data-has-hamster="true"]');
-            if (!ham) return alert('Kein Hamster vorhanden');
-            modalTool = 'hamsterCorn';
-            modalTarget = ham;
-            showCornModal();
-        });
-    document.getElementById('placeCorn')
-        .addEventListener('click', () => currentTool = 'corn');
-    document.getElementById('placeWall')
-        .addEventListener('click', () => currentTool = 'wall');
-    document.getElementById('deleteItem')
-        .addEventListener('click', () => currentTool = 'delete');
+    document.getElementById('placeHamster').onclick = () => currentTool='hamster';
+    document.getElementById('placeCorn').onclick    = () => currentTool='corn';
+    document.getElementById('placeWall').onclick    = () => currentTool='wall';
+    document.getElementById('deleteItem').onclick   = () => currentTool='delete';
+    document.getElementById('placeHamsterCorn').onclick = () => {
+        if (!gridElement) return alert('Erst Territorium');
+        const h = gridElement.querySelector('[data-has-hamster="true"]');
+        if (!h) return alert('Kein Hamster');
+        modalTool='hamsterCorn'; modalTarget=h; showCornModal();
+    };
+    document.getElementById('rotateBtn').onclick = () => {
+        if (!gridElement) return alert('Kein Territorium');
+        const c = gridElement.querySelector('[data-has-hamster="true"]');
+        if (!c) return alert('Kein Hamster');
+        let r = (+c.dataset.rotation + 270) % 360;
+        drawCell(c); renderHamster(c, r); saveTerritoryState();
+    };
+    document.getElementById('zoomIn').onclick = () => {
+        if (!gridElement) return;
+        let s = +gridElement.dataset.scale + 0.1;
+        gridElement.dataset.scale = s.toFixed(2);
+        gridElement.style.transform = `scale(${s.toFixed(2)})`;
+    };
+    document.getElementById('zoomOut').onclick = () => {
+        if (!gridElement) return;
+        let s = Math.max(0.1, +gridElement.dataset.scale - 0.1);
+        gridElement.dataset.scale = s.toFixed(2);
+        gridElement.style.transform = `scale(${s.toFixed(2)})`;
+    };
 
-    document.getElementById('zoomIn')
-        .addEventListener('click', () => {
-            if (!gridElement) return;
-            let s = parseFloat(gridElement.dataset.scale) || 1;
-            s += 0.1;
-            gridElement.dataset.scale = s.toFixed(2);
-            gridElement.style.transform = `scale(${s.toFixed(2)})`;
-        });
-    document.getElementById('zoomOut')
-        .addEventListener('click', () => {
-            if (!gridElement) return;
-            let s = parseFloat(gridElement.dataset.scale) || 1;
-            s = Math.max(0.1, s - 0.1);
-            gridElement.dataset.scale = s.toFixed(2);
-            gridElement.style.transform = `scale(${s.toFixed(2)})`;
-        });
-
-    document.getElementById('rotateBtn')
-        .addEventListener('click', () => {
-            if (!gridElement) return alert('Kein Territorium');
-            const cell = gridElement.querySelector('[data-has-hamster="true"]');
-            if (!cell) return alert('Kein Hamster vorhanden');
-            let r = (parseInt(cell.dataset.rotation,10) + 270) % 360;
-            cell.dataset.rotation = r;
-            const img = cell.querySelector('img');
-            if (img) img.style.transform = `rotate(${r}deg)`;
-            saveTerritoryState();
-        });
-
-    document.getElementById('cornConfirm')
-        .addEventListener('click', () => {
-            const val = parseInt(document.getElementById('cornCountInput').value,10);
-            if (isNaN(val) || val < 1 || val > 12) {
-                alert('Bitte eine Zahl zwischen 1 und 12 eingeben.');
-                return;
-            }
-            if (modalTool === 'hamsterCorn') {
-                hamMouthCount = val;
-                alert(`Hamster hat jetzt ${val} Körner im Maul.`);
-                updateCornDisplay();
-            } else {
-                const c = Math.min(val,12);
-                modalTarget.dataset.cornCount = c;
-                modalTarget.innerHTML = `<img src="data/körner/${c}Corn32.png" style="width:100%;height:100%;">`;
-            }
-            hideCornModal();
-            modalTool = null;
-            modalTarget = null;
-            saveTerritoryState();
-        });
-
-    document.getElementById('cornCancel')
-        .addEventListener('click', () => {
-            hideCornModal();
-            modalTool = null;
-            modalTarget = null;
-        });
+    document.getElementById('cornConfirm').onclick = () => {
+        const v = +document.getElementById('cornCountInput').value;
+        if (isNaN(v) || v<1 || v>12) return alert('Bitte 1–12');
+        if (modalTool==='hamsterCorn') {
+            hamMouthCount = v; updateCornDisplay();
+        } else {
+            modalTarget.dataset.cornCount = v+''; drawCell(modalTarget);
+        }
+        hideCornModal(); modalTool=null; modalTarget=null; saveTerritoryState();
+    };
+    document.getElementById('cornCancel').onclick = () => { hideCornModal(); modalTool=null; modalTarget=null; };
 
     document.body.addEventListener('click', e => {
         if (!gridElement) return;
@@ -381,222 +333,133 @@ document.addEventListener('DOMContentLoaded', () => {
         switch (currentTool) {
             case 'hamster': {
                 const old = gridElement.querySelector('[data-has-hamster="true"]');
-                if (old && old !== cell) {
-                    old.innerHTML = '';
-                    old.dataset.hasHamster = 'false';
-                    delete old.dataset.rotation;
-                }
-                if (cell.dataset.hasHamster === 'false') {
-                    cell.dataset.hasHamster = 'true';
-                    cell.dataset.rotation   = '0';
-                    cell.innerHTML = `<img src="data/hamster/hamstereast.png" style="width:100%;height:100%;transform:rotate(0deg);">`;
-                    hamMouthCount = 0;
-                    updateCornDisplay();
+                if (old && old!==cell) { old.dataset.hasHamster='false'; drawCell(old); }
+                if (cell.dataset.hasHamster==='false') {
+                    renderHamster(cell, 0); hamMouthCount=0; updateCornDisplay();
                 }
                 break;
             }
             case 'corn':
-                modalTool = 'corn';
-                modalTarget = cell;
-                showCornModal();
+                modalTool='corn'; modalTarget=cell; showCornModal();
                 break;
             case 'wall':
-                if (cell.dataset.wall === 'true') {
-                    cell.dataset.wall = 'false';
-                    cell.innerHTML = '';
-                } else {
-                    cell.dataset.wall = 'true';
-                    cell.innerHTML = `<img src="data/wand/Wall32.png" style="width:100%;height:100%;">`;
-                }
+                cell.dataset.wall = cell.dataset.wall==='true'?'false':'true';
+                drawCell(cell); saveTerritoryState();
                 break;
             case 'delete':
-                cell.innerHTML           = '';
-                cell.dataset.hasHamster  = 'false';
-                cell.dataset.cornCount   = '0';
-                cell.dataset.wall        = 'false';
-                delete cell.dataset.rotation;
-                hamMouthCount = 0;
-                updateCornDisplay();
+                cell.dataset.hasHamster='false';
+                cell.dataset.wall='false';
+                cell.dataset.cornCount='0';
+                drawCell(cell);
+                hamMouthCount=0; updateCornDisplay(); saveTerritoryState();
                 break;
         }
-        saveTerritoryState();
     });
 
-    // ── HAMSTER INTERPRETER & ANIMATION ───────────────────────────────────────
-    let commandQueue = [], history = [], currentStep = 0, timer = null;
-
-    function getHamCell() {
-        return gridElement.querySelector('[data-has-hamster="true"]');
-    }
+    function getHamCell() { return gridElement.querySelector('[data-has-hamster="true"]'); }
     function cellCoords(cell) {
-        const idx = Array.prototype.indexOf.call(gridElement.children, cell);
-        const cols = parseInt(gridElement.style.gridTemplateColumns.match(/\d+/)[0],10);
-        return [ idx % cols, Math.floor(idx / cols) ];
+        const idx = Array.prototype.indexOf.call(gridElement.children, cell),
+            cols = +gridElement.style.gridTemplateColumns.match(/\d+/)[0];
+        return [idx%cols, Math.floor(idx/cols)];
     }
-    function dirDelta(rot) {
-        switch (rot) {
-            case 0:   return [1, 0];
-            case 90:  return [0, 1];
-            case 180: return [-1, 0];
-            case 270: return [0, -1];
-        }
-    }
-    function renderHamster(cell, rot) {
-        Array.from(gridElement.children).forEach(c => {
-            if (c.dataset.hasHamster === 'true') {
-                c.innerHTML = '';
-                c.dataset.hasHamster = 'false';
-            }
-        });
-        cell.dataset.hasHamster = 'true';
-        cell.dataset.rotation   = rot;
-        cell.innerHTML = `<img src="data/hamster/hamstereast.png" style="width:100%;height:100%;transform:rotate(${rot}deg);">`;
-    }
+    function dirDelta(r) { return r===0?[1,0]:r===90?[0,1]:r===180?[-1,0]:[0,-1]; }
 
-    // actual low-level actions
     function actualVor() {
         if (!wrapper.vornFrei()) throw new Error('Weg ist versperrt');
-        const cell = getHamCell();
-        const [x,y] = cellCoords(cell);
-        const [dx,dy] = dirDelta(+cell.dataset.rotation);
-        const cols = parseInt(gridElement.style.gridTemplateColumns.match(/\d+/)[0],10);
-        const tgt = gridElement.children[(y+dy)*cols + (x+dx)];
-        renderHamster(tgt, +cell.dataset.rotation);
+        const c = getHamCell(), [x,y] = cellCoords(c), [dx,dy] = dirDelta(+c.dataset.rotation);
+        const cols = +gridElement.style.gridTemplateColumns.match(/\d+/)[0];
+        const t = gridElement.children[(y+dy)*cols + (x+dx)];
+        renderHamster(t, +c.dataset.rotation);
     }
-    function actualLinksUm() {
-        const cell = getHamCell();
-        const r = (+cell.dataset.rotation + 270) % 360;
-        renderHamster(cell, r);
-    }
-    function actualRechtsUm() {
-        const cell = getHamCell();
-        const r = (+cell.dataset.rotation + 90) % 360;
-        renderHamster(cell, r);
-    }
+    function actualLinksUm() { const c = getHamCell(), r = (+c.dataset.rotation + 270)%360; renderHamster(c,r); }
+    function actualRechtsUm() { const c = getHamCell(), r = (+c.dataset.rotation + 90)%360; renderHamster(c,r); }
     function actualNimm() {
-        const cell = getHamCell();
-        let cnt = +cell.dataset.cornCount;
-        if (cnt < 1) throw new Error('Kein Korn zum Aufnehmen');
-        cnt--; hamMouthCount++;
-        cell.dataset.cornCount = cnt;
-        cell.innerHTML = cnt
-            ? `<img src="data/körner/${Math.min(cnt,12)}Corn32.png" style="width:100%;height:100%;">`
-            : '';
-        updateCornDisplay();
+        const c = getHamCell(), cnt = +c.dataset.cornCount;
+        if (cnt<1) throw new Error('Kein Korn');
+        c.dataset.cornCount = (cnt-1)+'';
+        hamMouthCount++; drawCell(c); updateCornDisplay();
     }
     function actualGib() {
-        if (hamMouthCount < 1) throw new Error('Maul ist leer');
-        const cell = getHamCell();
-        let cnt = +cell.dataset.cornCount;
-        cnt++; hamMouthCount--;
-        cell.dataset.cornCount = cnt;
-        cell.innerHTML = `<img src="data/körner/${Math.min(cnt,12)}Corn32.png" style="width:100%;height:100%;">`;
-        updateCornDisplay();
+        if (hamMouthCount<1) throw new Error('Maul ist leer');
+        const c = getHamCell(), cnt = +c.dataset.cornCount+1;
+        c.dataset.cornCount = cnt+''; hamMouthCount--; drawCell(c); updateCornDisplay();
+    }
+    function actualSchreib(txt) { writerOutput.innerHTML += txt + '<br>'; }
+
+    function startUserGen() {
+        const raw = localStorage.getItem(CODE_KEY) || '';
+        let code = raw
+            .replace(/\bvor\(\)\s*;/g,    'yield "vor";')
+            .replace(/\blinksUm\(\)\s*;/g,'yield "linksUm";')
+            .replace(/\brechtsUm\(\)\s*;/g,'yield "rechtsUm";')
+            .replace(/\bnimm\(\)\s*;/g,   'yield "nimm";')
+            .replace(/\bgib\(\)\s*;/g,    'yield "gib";')
+            .replace(/\bschreib\(\s*("(?:\\.|[^"\\])*")\s*\)\s*;/g, 'yield ["schreib",$1];');
+        const wrapped = 'return (function*(){' + code + '})();';
+        try {
+            userGen = new Function('kornDa','maulLeer','vornFrei', wrapped)(
+                wrapper.kornDa, wrapper.maulLeer, wrapper.vornFrei
+            );
+        } catch(e) {
+            alert('Fehler beim Generieren: ' + e.message);
+        }
     }
 
-    // scheduling helpers
-    function snapshot() {
-        return sessionStorage.getItem('hamsterTerritory') + '||' + hamMouthCount;
-    }
-    function restore(s) {
-        const [terr, mouth] = s.split('||');
-        sessionStorage.setItem('hamsterTerritory', terr);
-        loadTerritoryState();
-        hamMouthCount = +mouth;
-        updateCornDisplay();
-    }
-    function schedule(fn) {
-        history.push(snapshot());
-        commandQueue.push(() => { fn(); saveTerritoryState(); });
-    }
-    function scheduleWrite(txt) {
-        commandQueue.push(() => schreib(txt));
+    function runStep() {
+        if (!userGen) {
+            initialSnapshot = snapshot();
+            startUserGen();
+        }
+        let nxt;
+        try { nxt = userGen.next(); }
+        catch(e) {
+            alert('Fehler: ' + e.message);
+            clearInterval(timer); timer = null;
+            return;
+        }
+        if (nxt.done) {
+            clearInterval(timer); timer = null;
+            return;
+        }
+        const cmd = nxt.value;
+        if (typeof cmd === 'string') {
+            ({vor:actualVor,linksUm:actualLinksUm,rechtsUm:actualRechtsUm,nimm:actualNimm,gib:actualGib})[cmd]();
+        } else if (Array.isArray(cmd) && cmd[0]==='schreib') {
+            actualSchreib(cmd[1]);
+        }
+        saveTerritoryState();
     }
 
-    // wrapper passed to user code
+    if (localStorage.getItem(RUN_KEY)==='true') {
+        localStorage.removeItem(RUN_KEY);
+        writerOutput.innerHTML = '';
+        [stepBackBtn,playBtn,pauseBtn,stopBtn].forEach(b => b.disabled=false);
+        timer = setInterval(runStep, 500);
+    }
+
+    playBtn.addEventListener('click', () => {
+        if (!timer) timer = setInterval(runStep, 500);
+    });
+    pauseBtn.addEventListener('click', () => {
+        if (timer) { clearInterval(timer); timer=null; }
+    });
+    stopBtn.addEventListener('click', () => {
+        if (timer) { clearInterval(timer); timer=null; }
+    });
+    stepBackBtn.addEventListener('click', () => {
+        if (timer) { clearInterval(timer); timer=null; }
+        if (initialSnapshot) restore(initialSnapshot);
+    });
+
     const wrapper = {
-        vor: () => schedule(actualVor),
-        linksUm: () => schedule(actualLinksUm),
-        rechtsUm: () => schedule(actualRechtsUm),
-        nimm: () => schedule(actualNimm),
-        gib: () => schedule(actualGib),
-        schreib: txt => scheduleWrite(txt),
-        kornDa: () => +getHamCell().dataset.cornCount > 0,
+        kornDa:   () => +getHamCell().dataset.cornCount > 0,
         maulLeer: () => hamMouthCount === 0,
         vornFrei: () => {
-            const cell = getHamCell();
-            const [x,y] = cellCoords(cell);
-            const [dx,dy] = dirDelta(+cell.dataset.rotation);
-            const cols = parseInt(gridElement.style.gridTemplateColumns.match(/\d+/)[0],10);
+            const c = getHamCell(), [x,y] = cellCoords(c), [dx,dy] = dirDelta(+c.dataset.rotation);
+            const cols = +gridElement.style.gridTemplateColumns.match(/\d+/)[0];
             const nx = x+dx, ny = y+dy;
-            if (nx < 0 || ny < 0) return false;
-            if (nx >= cols || ny >= gridElement.children.length/cols) return false;
+            if (nx<0||ny<0||nx>=cols||ny>=gridElement.children.length/cols) return false;
             return gridElement.children[ny*cols + nx].dataset.wall !== 'true';
         }
     };
-
-    // run once if flagged
-    if (sessionStorage.getItem('runPending') === 'true') {
-        sessionStorage.removeItem('runPending');
-        writerOutput.innerHTML = '';
-        history = [];
-        commandQueue = [];
-        currentStep = 0;
-
-        let code = sessionStorage.getItem('hamsterCode') || '';
-        if (!/void\s+main\s*\(/.test(code)) {
-            code = `void main() {\n${code.replace(/\n$/, '')}\n}`;
-        }
-        code += '\nmain();';
-
-        try {
-            new Function(
-                'vor','linksUm','rechtsUm','nimm','gib','schreib',
-                'kornDa','maulLeer','vornFrei',
-                code
-            )(
-                wrapper.vor, wrapper.linksUm, wrapper.rechtsUm,
-                wrapper.nimm, wrapper.gib, wrapper.schreib,
-                wrapper.kornDa, wrapper.maulLeer, wrapper.vornFrei
-            );
-            // enable controls
-            [stepBackBtn, playBtn, pauseBtn, stopBtn].forEach(b => b.disabled = false);
-        } catch (e) {
-            alert('Fehler beim Ausführen: ' + e.message);
-        }
-    }
-
-    // ── Control Buttons ───────────────────────────────────────────────────────
-    playBtn.addEventListener('click', () => {
-        if (timer) return;
-        timer = setInterval(() => {
-            if (currentStep >= commandQueue.length) {
-                clearInterval(timer);
-                timer = null;
-                return;
-            }
-            commandQueue[currentStep++]();
-        }, 500);
-    });
-
-    pauseBtn.addEventListener('click', () => {
-        if (timer) {
-            clearInterval(timer);
-            timer = null;
-        }
-    });
-
-    stopBtn.addEventListener('click', () => {
-        if (timer) {
-            clearInterval(timer);
-            timer = null;
-        }
-        if (history.length) restore(history[0]);
-        currentStep = 0;
-    });
-
-    stepBackBtn.addEventListener('click', () => {
-        if (currentStep <= 0) return;
-        restore(history[--currentStep]);
-    });
 });

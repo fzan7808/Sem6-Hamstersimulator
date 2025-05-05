@@ -47,3 +47,19 @@
         color: #ddd;
     }
 }
+/* File: edit_style.css */
+/* ─────────────────────────────────────────────────────────────────────────────
+   Editor Panel Only
+───────────────────────────────────────────────────────────────────────────── */
+.editor-container {
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 88px);
+    border: 2px solid #333;
+    border-radius: 5px;
+    overflow: hidden;
+    background: #fff;
+}
+.CodeMirror {
+    height: 100%;
+}
