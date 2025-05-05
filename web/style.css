@@ -2,7 +2,7 @@ body {
     font-family: 'Segoe UI', sans-serif;
     margin: 0;
     padding: 0;
-    background: #82EEFD; /* Babyblue Hintergrund */
+    background: linear-gradient(to bottom right, #1e3c72, #2a5298); /* zurück auf vorheriges Blau */
     color: white;
     text-align: center;
 }
@@ -37,11 +37,9 @@ h1 {
     color: #000000;
 }
 
-/* Territorium-Button → Wand-Hintergrund mit schwarzer Schrift */
+/* Territorium-Button → Wandrot als Ersatz, schwarze Schrift */
 .nav-button.territorium {
-    background-image: url('assets/wand/Wall32.png');
-    background-size: cover;
-    background-repeat: repeat;
+    background: #c0392b; /* rotes Wand-Design als Platzhalter */
     color: #000000;
 }
 
@@ -64,7 +62,7 @@ ul {
 }
 
 ul li::marker {
-    color: #ffd700;
+    color: #000000; /* Bulletpoints schwarz */
 }
 
 footer {
@@ -72,4 +70,46 @@ footer {
     padding: 20px;
     font-size: 0.9em;
     color: #555;
+}
+
+/* Toolbar aus deinem alten Code für edit.html und ter.html */
+.ter_toolbar {
+    display: flex;
+    gap: 16px;
+}
+
+.ter_toolbar > div {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ter_toolbar button {
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+    background-color: #f0f0f0;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: none;
+    object-fit: contain;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.button img {
+    width: 24px;
+    height: 24px;
+}
+
+.ter_toolbar button:hover {
+    background-color: #e0e0e0;
+}
+
+.ter_toolbar button:disabled img {
+    opacity: 0.5;
+    filter: grayscale(100%);
+    cursor: not-allowed;
 }
