@@ -2,7 +2,7 @@ body {
     font-family: 'Segoe UI', sans-serif;
     margin: 0;
     padding: 0;
-    background: linear-gradient(to bottom right, #1e3c72, #2a5298); /* zurück auf vorheriges Blau */
+    background: linear-gradient(to bottom right, #1e3c72, #2a5298);
     color: white;
     text-align: center;
 }
@@ -31,15 +31,13 @@ h1 {
     cursor: pointer;
 }
 
-/* Editor-Button → weiß mit schwarzer Schrift */
 .nav-button.editor {
     background: #ffffff;
     color: #000000;
 }
 
-/* Territorium-Button → Wandrot als Ersatz, schwarze Schrift */
 .nav-button.territorium {
-    background: #c0392b; /* rotes Wand-Design als Platzhalter */
+    background: #c0392b;
     color: #000000;
 }
 
@@ -69,10 +67,9 @@ footer {
     margin-top: 50px;
     padding: 20px;
     font-size: 0.9em;
-    color: #555;
+    color: #ffffff;
 }
 
-/* Toolbar aus deinem alten Code für edit.html und ter.html */
 .ter_toolbar {
     display: flex;
     gap: 16px;
