@@ -1,8 +1,49 @@
+.ter_toolbar {
+    display: flex;
+    gap: 16px;
+}
+
+.ter_toolbar > div {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ter_toolbar button {
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+    background-color: #f0f0f0;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: none;
+    object-fit: contain;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.button img {
+    width: 24px;
+    height: 24px;
+}
+
+.ter_toolbar button:hover {
+    background-color: #e0e0e0;
+}
+
+.ter_toolbar button:disabled img {
+    opacity: 0.5;
+    filter: grayscale(100%);
+    cursor: not-allowed;
+}
+
 body {
     font-family: 'Segoe UI', sans-serif;
     margin: 0;
     padding: 0;
-    background: #82EEFD; /* Babyblue Hintergrund */
+    background: linear-gradient(to bottom right, #1e3c72, #2a5298);
     color: white;
     text-align: center;
 }
@@ -24,25 +65,13 @@ h1 {
     height: 140px;
     font-size: 1.1em;
     font-weight: bold;
+    background: #ffffff;
+    color: #2a5298;
     border: none;
     border-radius: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
-}
-
-/* Editor-Button → weiß mit schwarzer Schrift */
-.nav-button.editor {
-    background: #ffffff;
-    color: #000000;
-}
-
-/* Territorium-Button → Wand-Hintergrund mit schwarzer Schrift */
-.nav-button.territorium {
-    background-image: url('assets/wand/Wall32.png');
-    background-size: cover;
-    background-repeat: repeat;
-    color: #000000;
 }
 
 .nav-button:hover {
@@ -71,5 +100,37 @@ footer {
     margin-top: 50px;
     padding: 20px;
     font-size: 0.9em;
-    color: #555;
+    color: #ddd;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Dark Mode Overrides
+───────────────────────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #121212;
+        color: #ddd;
+    }
+    .ter_toolbar button {
+        background-color: #2a2a2a;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+    .ter_toolbar button:hover {
+        background-color: #3a3a3a;
+    }
+    .nav-button {
+        background: #2a2a2a;
+        color: #ddd;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+    }
+    .nav-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.9);
+    }
+    .info {
+        color: #ccc;
+    }
+    footer {
+        color: #888;
+    }
 }
