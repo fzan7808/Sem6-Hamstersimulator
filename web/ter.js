@@ -26,6 +26,56 @@ document.addEventListener('DOMContentLoaded', () => {
     const stopBtn     = document.querySelector('button[title="Stop"]');
 
     // ── Helpers ────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        // The exact command sequence your "ESP" should run:
+        const sequence = [
+            'linksUm','vor','nimm',
+            'rechtsUm','vor','gib',
+            'vor','nimm','rechtsUm',
+            'vor','gib','linksUm',
+            'vor','gib'
+        ];
+        let idx = 0;
+
+        // Show a little popup in the bottom-left
+        function showRfidMsg() {
+            const msg = document.createElement('div');
+            msg.textContent = 'RFID-Schreibvorgang erfolgreich';
+            Object.assign(msg.style, {
+                position:       'fixed',
+                bottom:         '12px',
+                left:           '12px',
+                background:     'rgba(0,0,0,0.7)',
+                color:          'white',
+                padding:        '6px 10px',
+                borderRadius:   '4px',
+                fontSize:       '14px',
+                zIndex:         9999,
+                pointerEvents:  'none'
+            });
+            document.body.appendChild(msg);
+            setTimeout(() => document.body.removeChild(msg), 1500);
+        }
+
+        function runNext() {
+            if (idx >= sequence.length) return;
+            const cmd = sequence[idx++];
+            const btn = document.querySelector(`[data-cmd="${cmd}"]`);
+            if (btn) {
+                btn.click();
+                // on nimm() or gib(), show the fake RFID-write popup
+                if (cmd === 'nimm' || cmd === 'gib') {
+                    showRfidMsg();
+                }
+            }
+            // slightly slower than the default 500 ms
+            setTimeout(runNext, 1000);
+        }
+
+        // kick off after a short delay
+        setTimeout(runNext, 800);
+    });
+
     function updateCornDisplay() {
         cornDisplay.textContent = `Körner im Maul: ${hamMouthCount}`;
     }

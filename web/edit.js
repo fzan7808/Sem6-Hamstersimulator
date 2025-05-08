@@ -34,7 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // ── Default Template & Restore ─────────────────────────────────────────────
     const defaultCode = [
         "// Schreibe deinen Hamster-Code hier",
-        "// z.B.: if (vornFrei()) vor();"
+        "// z.B.: if (vornFrei()) vor();",
+        "void main() {}"
     ].join("\n");
 
     const saved = localStorage.getItem("hamsterCode");
