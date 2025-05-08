@@ -1,43 +1,6 @@
-// File: ter.js
+// ter.js
 document.addEventListener('DOMContentLoaded', () => {
-    // ───────────────────────────────────────────────────────────────────────────
-    // ESP32 HTTP Integration
-    // ───────────────────────────────────────────────────────────────────────────
-    const ESP_URL = 'http://esp32.local';  // or replace with your ESP32’s IP
-
-    // Send a command string to the ESP32
-    async function sendCmd(cmd) {
-        try {
-            const res = await fetch(`${ESP_URL}/command`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cmd })
-            });
-            if (!res.ok) console.error(`ESP cmd failed (${res.status})`);
-        } catch (err) {
-            console.error('ESP cmd error:', err);
-        }
-    }
-
-    // Poll the ESP32 for its latest telemetry (optional UI hook)
-    async function pollTelemetry() {
-        try {
-            const res = await fetch(`${ESP_URL}/telemetry`);
-            if (!res.ok) return;
-            const data = await res.json();
-            console.log('ESP telemetry:', data);
-            // You can hook this into updatePath(data), updateStats(data), etc.
-        } catch (err) {
-            console.error('ESP telemetry error:', err);
-        }
-    }
-
-    // Start polling every 500 ms
-    setInterval(pollTelemetry, 500);
-
-    // ───────────────────────────────────────────────────────────────────────────
-    // State & Element References
-    // ───────────────────────────────────────────────────────────────────────────
+    // ── State & Element References ─────────────────────────────────────────────
     let currentTool      = null;
     let gridElement      = null;
     let modalTool        = null;
@@ -62,9 +25,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const pauseBtn    = document.querySelector('button[title="Pause"]');
     const stopBtn     = document.querySelector('button[title="Stop"]');
 
-    // ───────────────────────────────────────────────────────────────────────────
-    // Helpers
-    // ───────────────────────────────────────────────────────────────────────────
+    // ── Helpers ────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        // The exact command sequence your "ESP" should run:
+        const sequence = [
+            'linksUm','vor','nimm',
+            'rechtsUm','vor','gib',
+            'vor','nimm','rechtsUm',
+            'vor','gib','linksUm',
+            'vor','gib'
+        ];
+        let idx = 0;
+
+        // Show a little popup in the bottom-left
+        function showRfidMsg() {
+            const msg = document.createElement('div');
+            msg.textContent = 'RFID-Schreibvorgang erfolgreich';
+            Object.assign(msg.style, {
+                position:       'fixed',
+                bottom:         '12px',
+                left:           '12px',
+                background:     'rgba(0,0,0,0.7)',
+                color:          'white',
+                padding:        '6px 10px',
+                borderRadius:   '4px',
+                fontSize:       '14px',
+                zIndex:         9999,
+                pointerEvents:  'none'
+            });
+            document.body.appendChild(msg);
+            setTimeout(() => document.body.removeChild(msg), 1500);
+        }
+
+        function runNext() {
+            if (idx >= sequence.length) return;
+            const cmd = sequence[idx++];
+            const btn = document.querySelector(`[data-cmd="${cmd}"]`);
+            if (btn) {
+                btn.click();
+                // on nimm() or gib(), show the fake RFID-write popup
+                if (cmd === 'nimm' || cmd === 'gib') {
+                    showRfidMsg();
+                }
+            }
+            // slightly slower than the default 500 ms
+            setTimeout(runNext, 1000);
+        }
+
+        // kick off after a short delay
+        setTimeout(runNext, 800);
+    });
+
     function updateCornDisplay() {
         cornDisplay.textContent = `Körner im Maul: ${hamMouthCount}`;
     }
@@ -96,10 +107,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderHamster(cell, rot) {
+        // remove old hamster(s)
         gridElement.querySelectorAll('[data-has-hamster="true"]').forEach(oldCell => {
             oldCell.dataset.hasHamster = 'false';
             drawCell(oldCell);
         });
+        // place new hamster
         cell.dataset.hasHamster = 'true';
         cell.dataset.rotation   = rot;
         drawCell(cell);
@@ -115,18 +128,22 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateToolbarState() {
         const hasGrid = !!gridElement;
         const hasHam  = hasGrid && !!gridElement.querySelector('[data-has-hamster="true"]');
+        // enable/disable grid-based tools
         ['newTerritory','openTerritory','saveTerritory',
             'placeHamster','rotateBtn','placeCorn','placeWall',
             'deleteItem','zoomIn','zoomOut'
         ].forEach(id => {
             document.getElementById(id).disabled = !hasGrid;
         });
+        // hamster-corn only if hamster exists
         document.getElementById('placeHamsterCorn').disabled = !hasHam;
+        // playback controls only after run
+        [stepBackBtn, playBtn, pauseBtn, stopBtn].forEach(b => {
+            // these get enabled when code is runPending
+        });
     }
 
-    // ───────────────────────────────────────────────────────────────────────────
-    // Grid Construction
-    // ───────────────────────────────────────────────────────────────────────────
+    // ── Grid Construction ─────────────────────────────────────────────────────
     function buildGrid(rows, cols) {
         const container = document.getElementById('gridContainer');
         if (gridElement) gridElement.remove();
@@ -150,9 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateToolbarState();
     }
 
-    // ───────────────────────────────────────────────────────────────────────────
-    // Persistence
-    // ───────────────────────────────────────────────────────────────────────────
+    // ── Persistence ────────────────────────────────────────────────────────────
     function saveTerritoryState() {
         if (!gridElement) return;
         const cols = +gridElement.style.gridTemplateColumns.match(/\d+/)[0];
@@ -196,9 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTerritoryState();
     window.addEventListener('beforeunload', saveTerritoryState);
 
-    // ───────────────────────────────────────────────────────────────────────────
-    // Territory UI Controls
-    // ───────────────────────────────────────────────────────────────────────────
+    // ── Territory UI ──────────────────────────────────────────────────────────
     document.getElementById('newTerritory').onclick = () => territoryModal.classList.remove('hidden');
     document.getElementById('createTerritoryConfirm').onclick = () => {
         const rows = +document.getElementById('rows').value;
@@ -350,9 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url);
     };
 
-    // ───────────────────────────────────────────────────────────────────────────
-    // Tools & Interaction
-    // ───────────────────────────────────────────────────────────────────────────
+    // ── Tools & Interaction ───────────────────────────────────────────────────
     document.getElementById('placeHamster').onclick = () => currentTool='hamster';
     document.getElementById('placeCorn').onclick    = () => currentTool='corn';
     document.getElementById('placeWall').onclick    = () => currentTool='wall';
@@ -381,6 +392,24 @@ document.addEventListener('DOMContentLoaded', () => {
         let s = Math.max(0.1, +gridElement.dataset.scale - 0.1);
         gridElement.dataset.scale = s.toFixed(2);
         gridElement.style.transform = `scale(${s.toFixed(2)})`;
+    };
+
+    document.getElementById('cornConfirm').onclick = () => {
+        const v = +document.getElementById('cornCountInput').value;
+        if (isNaN(v)||v<1||v>12) return alert('Bitte eine Zahl zwischen 1 und 12');
+        if (modalTool==='hamsterCorn') {
+            hamMouthCount = v;
+            updateCornDisplay();
+        } else {
+            modalTarget.dataset.cornCount = v + '';
+            drawCell(modalTarget);
+        }
+        cornModal.classList.add('hidden');
+        modalTool=null; modalTarget=null;
+        saveTerritoryState();
+    };
+    document.getElementById('cornCancel').onclick = () => {
+        cornModal.classList.add('hidden'); modalTool=null; modalTarget=null;
     };
 
     document.body.addEventListener('click', e => {
@@ -419,20 +448,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ───────────────────────────────────────────────────────────────────────────
-    // Low-Level Actions & Interpreter
-    // ───────────────────────────────────────────────────────────────────────────
-    function getHamCell() {
-        return gridElement.querySelector('[data-has-hamster="true"]');
-    }
+    // ── Low-Level Actions & Interpreter ────────────────────────────────────────
+    function getHamCell() { return gridElement.querySelector('[data-has-hamster="true"]'); }
     function cellCoords(cell) {
         const idx = Array.prototype.indexOf.call(gridElement.children, cell),
             cols = +gridElement.style.gridTemplateColumns.match(/\d+/)[0];
         return [ idx%cols, Math.floor(idx/cols) ];
     }
-    function dirDelta(r) {
-        return r===0?[1,0]:r===90?[0,1]:r===180?[-1,0]:[0,-1];
-    }
+    function dirDelta(r) { return r===0?[1,0]:r===90?[0,1]:r===180?[-1,0]:[0,-1]; }
 
     function actualVor() {
         if (!wrapper.vornFrei()) throw new Error('Weg ist versperrt');
@@ -494,7 +517,6 @@ document.addEventListener('DOMContentLoaded', () => {
             '})();';
         try {
             userGen = new Function('kornDa','maulLeer','vornFrei', body)(
-
                 wrapper.kornDa,
                 wrapper.maulLeer,
                 wrapper.vornFrei
@@ -524,17 +546,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const cmd = res.value;
-        // Send the command to ESP32
-        sendCmd(cmd);
-
         if (typeof cmd === 'string') {
-            ({
-                vor:      actualVor,
-                linksUm:  actualLinksUm,
-                rechtsUm: actualRechtsUm,
-                nimm:     actualNimm,
-                gib:      actualGib
-            })[cmd]();
+            ({ vor:actualVor,
+                linksUm:actualLinksUm,
+                rechtsUm:actualRechtsUm,
+                nimm:actualNimm,
+                gib:actualGib })[cmd]();
         } else if (Array.isArray(cmd) && cmd[0]==='schreib') {
             actualSchreib(cmd[1]);
         }
@@ -566,8 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
         kornDa:   () => +getHamCell().dataset.cornCount > 0,
         maulLeer: () => hamMouthCount === 0,
         vornFrei: () => {
-            const c = getHamCell(), [x,y] = cellCoords(c),
-                [dx,dy] = dirDelta(+c.dataset.rotation);
+            const c = getHamCell(), [x,y] = cellCoords(c), [dx,dy] = dirDelta(+c.dataset.rotation);
             const cols = +gridElement.style.gridTemplateColumns.match(/\d+/)[0];
             const nx = x+dx, ny = y+dy;
             if (nx<0||ny<0||nx>=cols||ny>=gridElement.children.length/cols) return false;

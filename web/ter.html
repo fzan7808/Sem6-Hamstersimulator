@@ -1,3 +1,4 @@
+<!-- File: ter.html -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -14,13 +15,21 @@
 </div>
 
 <div class="toolbar">
-    <!-- existing tool buttons... -->
-    <button data-cmd="vor"       title="Vor"><img src="data/leiste/Play24.gif" alt="Vor"/></button>
-    <button data-cmd="linksUm"   title="Links Um"><img src="data/leiste/Turn24.gif" alt="LinksUm"/></button>
-    <button data-cmd="rechtsUm"  title="Rechts Um"><img src="data/leiste/Turn24.gif" alt="RechtsUm"/></button>
-    <button data-cmd="holeKorn"  title="Nimm Korn"><img src="data/leiste/HamsterCorn24.png" alt="Nimm"/></button>
-    <button data-cmd="legeKorn"  title="Gib Korn"><img src="data/leiste/Corn24.gif" alt="Gib"/></button>
-    <!-- ...rest of toolbar buttons -->
+    <button id="newTerritory"  title="Neues Territorium"><img src="data/leiste/New24.gif" alt="Neu"/></button>
+    <button id="openTerritory" title="Territorium öffnen"><img src="data/leiste/Open24.gif" alt="Öffnen"/></button>
+    <button id="saveTerritory" title="Territorium speichern"><img src="data/leiste/SaveAs24.gif" alt="Speichern"/></button>
+    <button id="placeHamster"  title="Hamster versetzen"><img src="data/hamster/hamstereast.png" alt="Hamster"/></button>
+    <button id="rotateBtn"     title="Hamster drehen"><img src="data/leiste/Turn24.gif" alt="Drehen"/></button>
+    <button id="placeHamsterCorn" title="Hamster-Körner"><img src="data/leiste/HamsterCorn24.png" alt="HamsterCorn"/></button>
+    <button id="placeCorn"     title="Körner setzen"><img src="data/leiste/Corn24.gif" alt="Körner"/></button>
+    <button id="placeWall"     title="Wand setzen"><img src="data/wand/Wall32.png" alt="Wall"/></button>
+    <button id="deleteItem"    title="Element löschen"><img src="data/leiste/Delete32.gif" alt="Löschen"/></button>
+    <button id="zoomIn"        title="Zoom In"><img src="data/leiste/ZoomIn24.gif" alt="ZoomIn"/></button>
+    <button id="zoomOut"       title="Zoom Out"><img src="data/leiste/ZoomOut24.gif" alt="ZoomOut"/></button>
+    <button disabled title="Schritt zurück"><img src="data/leiste/StepBack24.gif" alt="Zurück"/></button>
+    <button disabled title="Play"><img src="data/leiste/Play24.gif" alt="Play"/></button>
+    <button disabled title="Pause"><img src="data/leiste/Pause24.gif" alt="Pause"/></button>
+    <button disabled title="Stop"><img src="data/leiste/Stop24.gif" alt="Stop"/></button>
     <input type="file" id="fileInput" accept=".ter" hidden/>
 </div>
 
@@ -28,23 +37,26 @@
 <div id="cornDisplay" class="corn-display">Körner im Maul: 0</div>
 <div id="writerOutput" class="writer-output"></div>
 
-<!-- Telemetry panel -->
-<div class="telemetry-panel">
-    <p><strong>Aktion:</strong> <span id="last-action">–</span></p>
-    <p><strong>Card UID:</strong> <span id="last-uid">–</span></p>
-    <p><strong>Entfernung:</strong> <span id="last-distance">–</span> cm</p>
-    <p><strong>Körner:</strong> <span id="last-seeds">–</span></p>
-</div>
-
 <div id="territoryModal" class="modal hidden">
-    <!-- existing modal content... -->
+    <div class="modal-content">
+        <label for="rows">Zeilen:</label>
+        <input type="number" id="rows" min="1" placeholder="Zeilen"/>
+        <label for="cols">Spalten:</label>
+        <input type="number" id="cols" min="1" placeholder="Spalten"/>
+        <button id="createTerritoryConfirm">Erstellen</button>
+        <button id="createTerritoryCancel">Abbrechen</button>
+    </div>
 </div>
 
 <div id="cornModal" class="modal hidden">
-    <!-- existing modal content... -->
+    <div class="modal-content">
+        <label for="cornCountInput">Körner (1–12):</label>
+        <input type="number" id="cornCountInput" min="1" max="12" placeholder="1–12"/>
+        <button id="cornConfirm">OK</button>
+        <button id="cornCancel">Abbrechen</button>
+    </div>
 </div>
 
 <script src="ter.js"></script>
-<script src="esp32-client.js"></script>
 </body>
 </html>
