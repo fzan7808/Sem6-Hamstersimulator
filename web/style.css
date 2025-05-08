@@ -2,7 +2,7 @@ body {
     font-family: 'Segoe UI', sans-serif;
     margin: 0;
     padding: 0;
-    background: #82EEFD; /* Babyblue Hintergrund */
+    background: #3588de;
     color: white;
     text-align: center;
 }
@@ -39,7 +39,6 @@ h1 {
 
 /* Territorium-Button → Wand-Hintergrund mit schwarzer Schrift */
 .nav-button.territorium {
-    background-image: url('assets/wand/Wall32.png');
     background-size: cover;
     background-repeat: repeat;
     color: #000000;
@@ -64,7 +63,7 @@ ul {
 }
 
 ul li::marker {
-    color: #ffd700;
+    color: #000000;
 }
 
 footer {
